@@ -28,6 +28,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests python-dotenv
     
+    - name: Set date
+      run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+    
     - name: Run statistics script
       env:
         GITHUB_USERNAME: ${{ github.repository_owner }}
@@ -38,10 +41,10 @@ jobs:
       run: |
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        branch_name="stats/$(date +'%Y-%m-%d')"
+        branch_name="stats/${{ env.DATE }}"
         git checkout -b $branch_name
         git add github_commit_count.md
-        git commit -m "Update GitHub commit statistics for $(date +'%Y-%m-%d')"
+        git commit -m "Update GitHub commit statistics for ${{ env.DATE }}"
         git push --set-upstream origin $branch_name
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -50,8 +53,8 @@ jobs:
       uses: peter-evans/create-pull-request@v5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        title: "Update GitHub commit statistics $(date +'%Y-%m-%d')"
-        body: "Automated statistics update for $(date +'%Y-%m-%d')"
-        branch: "stats/$(date +'%Y-%m-%d')"
+        title: "Update GitHub commit statistics ${{ env.DATE }}"
+        body: "Automated statistics update for ${{ env.DATE }}"
+        branch: "stats/${{ env.DATE }}"
         base: ${{ github.ref }}
         delete-branch: true
