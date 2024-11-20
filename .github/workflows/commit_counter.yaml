@@ -42,10 +42,18 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         branch_name="stats/${{ env.DATE }}"
+        
+        # Delete existing local branch (if exists)
+        git branch -D $branch_name || true
+        
+        # Delete existing remote branch (if exists)
+        git push origin --delete $branch_name || true
+        
+        # Create and push new branch
         git checkout -b $branch_name
         git add github_commit_count.md
         git commit -m "Update GitHub commit statistics for ${{ env.DATE }}"
-        git push --set-upstream origin $branch_name
+        git push -f --set-upstream origin $branch_name
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
