@@ -22,17 +22,38 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests
+        pip install requests python-dotenv
     
     - name: Run statistics script
       env:
         GITHUB_USERNAME: ${{ github.repository_owner }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: python commit_stats.py
+      run: python commit_count.py
     
-    - name: Commit and push if changed
+    - name: Create new branch and commit changes
       run: |
+        # 获取当前日期作为分支名
+        branch_name="stats/$(date +'%Y-%m-%d')"
+        
+        # 配置 Git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add github_stats.md
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Update GitHub commit statistics" && git push)
+        
+        # 创建新分支
+        git checkout -b $branch_name
+        
+        # 添加更改并提交
+        git add github_commit_count.md
+        git commit -m "Update GitHub commit statistics for $(date +'%Y-%m-%d')"
+        
+        # 推送新分支
+        git push origin $branch_name
+        
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        title: "Update GitHub commit statistics $(date +'%Y-%m-%d')"
+        body: "Automated statistics update for $(date +'%Y-%m-%d')"
+        branch: "stats/$(date +'%Y-%m-%d')"
+        base: ${{ github.ref }}
+        delete-branch: true
