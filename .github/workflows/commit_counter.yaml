@@ -2,17 +2,21 @@ name: GitHub Commit Statistics
 
 on:
   schedule:
-    - cron: '0 23 * * *'  #  run at 00:00 every day
-  workflow_dispatch:      #  allow manual trigger
-
-
+    - cron: '0 23 * * *'  # UTC 23:00 (UTC+1 00:00)
+  workflow_dispatch:
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    permissions:  # 添加明确的权限
+      contents: write
+      pull-requests: write
     
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # 获取完整的git历史
+        token: ${{ secrets.GITHUB_TOKEN }}  # 明确指定token
     
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -32,26 +36,20 @@ jobs:
     
     - name: Create new branch and commit changes
       run: |
-        # 获取当前日期作为分支名
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
         branch_name="stats/$(date +'%Y-%m-%d')"
-        
-        # 配置 Git
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        # 创建新分支
         git checkout -b $branch_name
-        
-        # 添加更改并提交
         git add github_commit_count.md
         git commit -m "Update GitHub commit statistics for $(date +'%Y-%m-%d')"
-        
-        # 推送新分支
-        git push origin $branch_name
-        
+        git push --set-upstream origin $branch_name
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v5
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         title: "Update GitHub commit statistics $(date +'%Y-%m-%d')"
         body: "Automated statistics update for $(date +'%Y-%m-%d')"
         branch: "stats/$(date +'%Y-%m-%d')"
